@@ -1,6 +1,9 @@
 <script>
 
-// ✅ IMPORTANT: PUT YOUR REAL FIREBASE CONFIG HERE
+// 🔥 TEMP DEBUG (you MUST see this)
+alert("JS LOADED");
+
+// ❗ REPLACE THIS WITH REAL FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "PASTE_REAL_KEY",
   authDomain: "PASTE_REAL",
@@ -11,6 +14,12 @@ const firebaseConfig = {
   appId: "PASTE_REAL"
 };
 
+// 🚨 CHECK IF CONFIG IS STILL FAKE
+if(firebaseConfig.apiKey.includes("PASTE_REAL")){
+  alert("❌ Firebase NOT configured. Go fix it.");
+}
+
+// INIT
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
@@ -19,21 +28,29 @@ let current = 0;
 
 function show(p){
 ['home','library','reader','adminWorks','editor']
-.forEach(id=>document.getElementById(id).classList.add('hidden'));
+.forEach(id=>{
+  let el = document.getElementById(id);
+  if(el) el.classList.add('hidden');
+});
 document.getElementById(p).classList.remove('hidden');
 }
 
+// 🧱 CREATE WORK
 function addWork(){
 let name = document.getElementById("newWorkName").value;
-if(!name) return;
+if(!name) return alert("Enter a name");
 
-db.ref('works/'+name).set(true);
-loadWorks();
+db.ref('works/'+name).set(true)
+.then(()=>alert("Work created"))
+.catch(e=>alert("Error: "+e.message));
 }
 
+// 📚 LOAD WORKS
 function loadWorks(){
 db.ref('works').on('value',snap=>{
 let list = document.getElementById("worksList");
+if(!list) return;
+
 list.innerHTML='';
 
 snap.forEach(w=>{
@@ -52,6 +69,7 @@ list.appendChild(div);
 });
 }
 
+// ✍️ OPEN EDITOR
 function openWork(w){
 currentWork = w;
 openEditor();
@@ -68,11 +86,12 @@ show('editor');
 });
 }
 
+// 🚀 PUBLISH
 function publishChapter(){
 let t = document.getElementById("newTitle").value;
 let c = document.getElementById("editorBox").innerHTML;
 
-if(!t || !c) return;
+if(!t || !c) return alert("Fill everything");
 
 db.ref('chapters/'+currentWork).once('value').then(snap=>{
 let num = snap.numChildren()+1;
@@ -82,15 +101,17 @@ title:`Chapter ${num}: ${t}`,
 content:c
 });
 
-loadLibrary();
 alert('Published');
 show('library');
 });
 }
 
+// 📖 LIBRARY
 function loadLibrary(){
 db.ref('chapters').on('value',snap=>{
 let lib = document.getElementById("libraryList");
+if(!lib) return;
+
 lib.innerHTML='';
 
 snap.forEach(work=>{
@@ -113,6 +134,7 @@ lib.appendChild(div);
 });
 }
 
+// 📖 READ
 function openChapter(w,i){
 currentWork=w;
 current=i;
@@ -128,6 +150,7 @@ loadComments();
 });
 }
 
+// 💬 COMMENTS
 function addComment(){
 let name = document.getElementById('name').value || 'Anonymous';
 let text = document.getElementById('commentBox').value;
@@ -137,12 +160,13 @@ if(!text) return;
 db.ref(`comments/${currentWork}/${current}`).push({name,text});
 
 document.getElementById('commentBox').value='';
-loadComments();
 }
 
 function loadComments(){
 db.ref(`comments/${currentWork}/${current}`).on('value',snap=>{
 let box = document.getElementById("comments");
+if(!box) return;
+
 box.innerHTML='';
 
 snap.forEach(c=>{
@@ -156,6 +180,7 @@ box.appendChild(d);
 });
 }
 
+// 🔐 ADMIN
 function adminCheck(){
 let key = localStorage.getItem('adminKey');
 
