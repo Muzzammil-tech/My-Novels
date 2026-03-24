@@ -1,126 +1,87 @@
-alert("Site is alive");
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Your Novel</title>
-
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
-<style>
-body{margin:0;font-family:Segoe UI,sans-serif;background:#050816;color:#e6ecff}
-header{text-align:center;padding:25px}
-h1{color:#00c3ff}
-nav{text-align:center}
-nav button{margin:5px;padding:10px;border:1px solid #00c3ff;background:none;color:#00c3ff;border-radius:8px;cursor:pointer}
-.container{max-width:900px;margin:auto;padding:20px}
-.hidden{display:none}
-.card{background:#0b1a2a;padding:15px;margin:10px 0;border-radius:10px}
-textarea,input{width:100%;margin:5px 0;padding:10px;border-radius:6px;border:none}
-.editor{min-height:300px;background:#0b1a2a;padding:15px;border-radius:8px}
-.comment{background:#0b1a2a;padding:8px;margin-top:5px;border-radius:6px}
-</style>
-</head>
-
-<body>
-<header>
-<h1>Your Novel Title</h1>
-<p>Futuristic Cultivation Story</p>
-</header>
-
-<nav>
-<button onclick="show('home')">Home</button>
-<button onclick="show('library')">Library</button>
-<button id="adminBtn" class="hidden" onclick="show('adminWorks')">My Works</button>
-</nav>
-
-<div class="container">
-<section id="home"><h2>Welcome</h2></section>
-<section id="library" class="hidden"><h2>Library</h2><div id="libraryList"></div></section>
-
-<section id="reader" class="hidden">
-<h2 id="title"></h2>
-<div id="content"></div>
-<h3>Comments</h3>
-<input id="name" placeholder="Name">
-<textarea id="commentBox"></textarea>
-<button onclick="addComment()">Post</button>
-<div id="comments"></div>
-</section>
-
-<section id="adminWorks" class="hidden">
-<h2>My Works</h2>
-<input id="newWorkName" placeholder="New Work">
-<button onclick="addWork()">Create</button>
-<div id="worksList"></div>
-</section>
-
-<section id="editor" class="hidden">
-<h2 id="editorTitle"></h2>
-<input id="newTitle" placeholder="Chapter Title">
-<div contenteditable="true" id="editorBox" class="editor"></div>
-<button onclick="publishChapter()">Publish</button>
-</section>
-</div>
-
 <script>
 
-// 🔥 REPLACE THIS WITH YOUR FIREBASE CONFIG
+// ✅ IMPORTANT: PUT YOUR REAL FIREBASE CONFIG HERE
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  databaseURL: "https://YOUR_PROJECT.firebaseio.com",
-  projectId: "YOUR_PROJECT",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "XXXX",
-  appId: "XXXX"
+  apiKey: "PASTE_REAL_KEY",
+  authDomain: "PASTE_REAL",
+  databaseURL: "PASTE_REAL",
+  projectId: "PASTE_REAL",
+  storageBucket: "PASTE_REAL",
+  messagingSenderId: "PASTE_REAL",
+  appId: "PASTE_REAL"
 };
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-let currentWork=null,current=0;
+let currentWork = null;
+let current = 0;
 
-function show(p){['home','library','reader','adminWorks','editor'].forEach(id=>document.getElementById(id).classList.add('hidden'));document.getElementById(p).classList.remove('hidden');}
+function show(p){
+['home','library','reader','adminWorks','editor']
+.forEach(id=>document.getElementById(id).classList.add('hidden'));
+document.getElementById(p).classList.remove('hidden');
+}
 
 function addWork(){
-let name=newWorkName.value;
-if(!name)return;
+let name = document.getElementById("newWorkName").value;
+if(!name) return;
+
 db.ref('works/'+name).set(true);
 loadWorks();
 }
 
 function loadWorks(){
 db.ref('works').on('value',snap=>{
-let list=worksList;list.innerHTML='';
+let list = document.getElementById("worksList");
+list.innerHTML='';
+
 snap.forEach(w=>{
 let name=w.key;
-let div=document.createElement('div');div.className='card';
-div.innerHTML=`<b>${name}</b><br><button onclick="openWork('${name}')">Open</button>`;
+
+let div=document.createElement('div');
+div.className='card';
+
+div.innerHTML=`
+<b>${name}</b><br>
+<button onclick="openWork('${name}')">Open</button>
+`;
+
 list.appendChild(div);
 });
 });
 }
 
-function openWork(w){currentWork=w;openEditor();}
+function openWork(w){
+currentWork = w;
+openEditor();
+}
 
 function openEditor(){
 db.ref('chapters/'+currentWork).once('value').then(snap=>{
-let num=snap.numChildren()+1;
-editorTitle.innerText=`Writing Chapter ${num}`;
+let num = snap.numChildren()+1;
+
+document.getElementById("editorTitle").innerText =
+`Writing Chapter ${num}`;
+
 show('editor');
 });
 }
 
 function publishChapter(){
-let t=newTitle.value,c=editorBox.innerHTML;
-if(!t||!c)return;
+let t = document.getElementById("newTitle").value;
+let c = document.getElementById("editorBox").innerHTML;
+
+if(!t || !c) return;
+
 db.ref('chapters/'+currentWork).once('value').then(snap=>{
-let num=snap.numChildren()+1;
-db.ref('chapters/'+currentWork+'/'+num).set({title:`Chapter ${num}: ${t}`,content:c});
+let num = snap.numChildren()+1;
+
+db.ref('chapters/'+currentWork+'/'+num).set({
+title:`Chapter ${num}: ${t}`,
+content:c
+});
+
 loadLibrary();
 alert('Published');
 show('library');
@@ -129,13 +90,23 @@ show('library');
 
 function loadLibrary(){
 db.ref('chapters').on('value',snap=>{
-let lib=libraryList;lib.innerHTML='';
+let lib = document.getElementById("libraryList");
+lib.innerHTML='';
+
 snap.forEach(work=>{
 work.forEach(chap=>{
 let c=chap.val();
-let div=document.createElement('div');div.className='card';
-div.innerHTML=`<b>${c.title}</b><br><small>${work.key}</small>`;
+
+let div=document.createElement('div');
+div.className='card';
+
+div.innerHTML=`
+<b>${c.title}</b><br>
+<small>${work.key}</small>
+`;
+
 div.onclick=()=>openChapter(work.key,chap.key);
+
 lib.appendChild(div);
 });
 });
@@ -143,45 +114,66 @@ lib.appendChild(div);
 }
 
 function openChapter(w,i){
-currentWork=w;current=i;
+currentWork=w;
+current=i;
+
 db.ref(`chapters/${w}/${i}`).once('value').then(snap=>{
 let chap=snap.val();
-title.innerText=chap.title;
-content.innerHTML=chap.content;
-show('reader');loadComments();
+
+document.getElementById("title").innerText=chap.title;
+document.getElementById("content").innerHTML=chap.content;
+
+show('reader');
+loadComments();
 });
 }
 
 function addComment(){
-let name=document.getElementById('name').value||'Anonymous';
-let text=document.getElementById('commentBox').value;
-if(!text)return;
+let name = document.getElementById('name').value || 'Anonymous';
+let text = document.getElementById('commentBox').value;
+
+if(!text) return;
+
 db.ref(`comments/${currentWork}/${current}`).push({name,text});
-commentBox.value='';loadComments();
+
+document.getElementById('commentBox').value='';
+loadComments();
 }
 
 function loadComments(){
 db.ref(`comments/${currentWork}/${current}`).on('value',snap=>{
-let box=comments;box.innerHTML='';
+let box = document.getElementById("comments");
+box.innerHTML='';
+
 snap.forEach(c=>{
-let d=document.createElement('div');d.className='comment';
-d.innerText=c.val().name+': '+c.val().text;
+let d=document.createElement('div');
+d.className='comment';
+
+d.innerText = c.val().name + ': ' + c.val().text;
+
 box.appendChild(d);
 });
 });
 }
 
 function adminCheck(){
-let key=localStorage.getItem('adminKey');
-if(!key){let k=prompt('Set admin key');if(k)localStorage.setItem('adminKey',k);} 
-else{let k=prompt('Enter admin key');if(k===key)adminBtn.classList.remove('hidden');}
+let key = localStorage.getItem('adminKey');
+
+if(!key){
+let k = prompt('Set admin key');
+if(k) localStorage.setItem('adminKey',k);
+}
+else{
+let k = prompt('Enter admin key');
+if(k === key){
+document.getElementById("adminBtn").classList.remove('hidden');
+}
+}
 }
 
+// 🚀 START
 adminCheck();
 loadWorks();
 loadLibrary();
 
 </script>
-
-</body>
-</html>
